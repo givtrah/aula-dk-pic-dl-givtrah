@@ -31,17 +31,11 @@ class Arguments:
             nargs="+",
             help="Download images having at least one of these tags",
         )
-        parser.add_argument(
-            "--apiVersion", required=False, default=21, help="Aula API version"
-        )
-        parser.add_argument("--cookie", required=False, default="", help="Aula Cookie")
         args = parser.parse_args()
 
         self.cutoff_date = datetime.fromisoformat(args.cutoffDate).date()
         self.tags_to_find = args.tags
         self.output_directory = args.outputFolder
-        self.api_version = args.apiVersion
-        self.session_cookie = args.cookie
 
     def print_arguments(self):
         param_style = "cyan"
@@ -52,10 +46,6 @@ class Arguments:
         )
         if self.tags_to_find:
             console.print(f"  tags: {self.tags_to_find}", style=param_style)
-        if self.api_version:
-            console.print(f"  apiVersion: {self.api_version}", style=param_style)
-        if self.session_cookie:
-            console.print(f"  cookie: {self.session_cookie}", style=param_style)
         console.print()
 
 
@@ -67,8 +57,8 @@ class AlbumToDownload:
         self.pictures = pictures
 
     def __str__(self):
-        return f"Type: {self.album_type: <8}, CreationDate: {self.creation_date}, \
-Pictures: {len(self.pictures): <3}, Name: {self.name}"
+        return f"Type: {self.album_type}, CreationDate: {self.creation_date}, '\
+            'Pictures: {len(self.pictures)}, Name: {self.name}"
 
 
 def parse_date(date_string):
@@ -110,8 +100,8 @@ def add_exif_creation_time(image_path, creation_time):
         piexif.insert(exif_bytes, image_path)
 
 
-def get_albums_from_gallery(client, institution_profile_ids, cutoff_date):
-    console.print("Get Albums...")
+def get_albums_from_gallery(institution_profile_ids, cutoff_date):
+    print("Get Albums...")
     additional_params = {"limit": 1000}
     albums_to_download = []
     albums = client.get_albums(institution_profile_ids, additional_params)
@@ -135,8 +125,8 @@ def filter_list_with_property(list_to_filter, property_name: str):
     return list(filter(lambda a: a[property_name] is not None, list_to_filter))
 
 
-def get_albums_from_posts(client, institution_profile_ids, children_ids, cutoff_date):
-    console.print("Get Posts...")
+def get_albums_from_posts(institution_profile_ids, children_ids, cutoff_date):
+    print("Get Posts...")
     additional_params = {"limit": 1000}
     albums_to_download = []
     get_posts_institution_profile_ids = institution_profile_ids + children_ids
@@ -156,10 +146,10 @@ def get_albums_from_posts(client, institution_profile_ids, children_ids, cutoff_
     return albums_to_download
 
 
-def get_albums_from_messages(client, cutoff_date):
-    console.print("Get Threads...")
+def get_albums_from_messages(cutoff_date):
+    print("Get Threads...")
     albums_to_download = []
-    threads = get_threads(client, cutoff_date)
+    threads = get_threads(cutoff_date)
     for thread in threads:
         thread_id = thread["id"]
         thread_latest_message_time = parse_datetime(
@@ -170,9 +160,7 @@ def get_albums_from_messages(client, cutoff_date):
         )
         if not is_thread_updated_after_cutoff_date:
             break  # Following threads won't be updated either, exit
-        messages_with_attachments = get_messages_with_attachments_in_thread(
-            client, thread_id
-        )
+        messages_with_attachments = get_messages_with_attachments_in_thread(thread_id)
         for message_index, message in enumerate(messages_with_attachments):
             attachments_with_media = filter_list_with_property(
                 message["attachments"], "media"
@@ -186,7 +174,7 @@ def get_albums_from_messages(client, cutoff_date):
     return albums_to_download
 
 
-def get_threads(client, cutoff_date):
+def get_threads(cutoff_date):
     threads_page_param = {"page": 0}
     threads_response = client.get_threads(threads_page_param)
     threads = threads_response["threads"]
@@ -202,7 +190,7 @@ def get_threads(client, cutoff_date):
     return threads
 
 
-def get_messages_with_attachments_in_thread(client, thread_id):
+def get_messages_with_attachments_in_thread(thread_id):
     page_param = {"page": 0}
     messages_response = client.get_messages_for_thread(thread_id, page_param)
     messages = messages_response["messages"]
@@ -236,7 +224,6 @@ def get_image_data(album: AlbumToDownload, output_directory, file_data):
 def main():
     args = Arguments()
     args.print_arguments()
-    client = AulaClient(args.api_version, args.session_cookie)
 
     try:
         profiles = client.get_profiles()
@@ -249,15 +236,13 @@ def main():
     children_ids = list(map(lambda p: p["id"], profiles[0]["children"]))
 
     albums_to_download = []
-    albums_to_download += get_albums_from_gallery(
-        client, institution_ids, args.cutoff_date
-    )
+    albums_to_download += get_albums_from_gallery(institution_ids, args.cutoff_date)
     albums_to_download += get_albums_from_posts(
-        client, institution_ids, children_ids, args.cutoff_date
+        institution_ids, children_ids, args.cutoff_date
     )
-    albums_to_download += get_albums_from_messages(client, args.cutoff_date)
+    albums_to_download += get_albums_from_messages(args.cutoff_date)
 
-    console.print("Download Pictures...")
+    print("Download Pictures...")
     for album in track(albums_to_download, "Albums to download..."):
         if album.creation_date < args.cutoff_date:
             continue
@@ -281,4 +266,5 @@ def main():
 
 if __name__ == "__main__":
     console = Console()
+    client = AulaClient()
     main()
