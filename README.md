@@ -1,26 +1,36 @@
-# aula-dk-picture-download
-A python script to download pictures with tags from aula.dk
-
-## Description 
+# aula-dk-pic-dl-givtrah
 This script downloads images in albums, posts and messages from aula.dk.
+
+## Description
+This is a fork of https://github.com/elnigno/aula-dk-picture-download
+
+This downloads all media you have access to on aula.dk (pictures or movies) in both galleries, posts and messages.
+
+## At least the following changes have been made compared to the original:
+
+Nixified & now uses uv as python package manager
+
+*nix like options instead of the long windows-like options
+
+Now stores all files as: outputdir/YYYY-MM-DD_gallery_folder/YYYY-MM-DD_filename.jpg 
+(gallery_folder can also be message/post headings - note that this double dates the files as sometimes gallery albums are WAY older than the files in it)
+
+The option to only download images with certain tags has not been implemented, an option to supply the session cookie manually has also not been implemented. Manual Api change not implemented.
+
+Currently uses Aula API version 21 (easy to change). 
+
+Tested on various versions of Linux including Nix OS
 
 For it to work, you must first **log into aula.dk with your browser**.
 
 Accepted parameters:
 
-- `--cutoffDate CUTOFFDATE` Only download images that have been posted on or after this date (format: "YYYY-MM-DD")
-- `--tags TAGS [TAGS ...]` Only download pictures having at least one of these tags
-- `--outputFolder OUTPUTFOLDER` Download images in this folder
-
-The script saves images in folders, grouping them by album/post/message. The folders names follow the template "Date Title", where the date is in ISO format (yyyymmdd) and the title is the album/post/message title.
-
-Tested to work on Windows 10, after logging into aula.dk with MitID on Firefox and Chrome.
-
-This script was initially inspired by this blog post: https://helmstedt.dk/2021/05/aulas-api-en-opdatering/
+- `-d CUTOFFDATE` Only download images that have been posted on or after this date (format: "YYYY-MM-DD"). Beware: This uses the post/message/album creation date, NOT the picture upload date!
+- `-o OUTPUTFOLDER` Download images in this folder (format: "folder", can be relative path)
 
 ## Usage Example
 ```bash
-python .\aula_download_albums_with_tags.py --cutoffDate "2023-02-19" --tags "Tag1" "Tag2" --outputFolder "output"
+python .\aula_dk_dl-givtrah.py -d "2023-02-19" -o "output_folder"
 ```
 
 ## Known issues
