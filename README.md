@@ -36,3 +36,5 @@ python .\aula_dk_dl-givtrah.py -d "2023-02-19" -o "output_folder"
 ## Known issues
 
 The script might crash if you login with unilogin and attempt to download images from messages marked as sensitive. The issue does not occur when logging in with MitID, so use that if possible. 
+
+aula.dk allows the use of emojis in filenames and gallery folder names. This is currently not handled correctly (should be killed by fire and renamed to a _), thank you Netcompany for introducing this nonsense. Sigh.
